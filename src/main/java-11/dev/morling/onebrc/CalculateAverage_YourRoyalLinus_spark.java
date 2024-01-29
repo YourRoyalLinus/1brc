@@ -22,7 +22,7 @@ import org.apache.spark.sql.types.StructType;
 import static org.apache.spark.sql.functions.*;
 
 public class CalculateAverage_YourRoyalLinus_spark {
-    private static final String FILE = "./1brc/measurements.txt";
+    private static final String FILE = "./measurements.txt";
 
     public static void main(String[] args) throws IOException {
         SparkSession spark = SparkSession
