@@ -1,40 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!--
-
-     Copyright 2023 The original authors
-
-     Licensed under the Apache License, Version 2.0 (the "License");
-     you may not use this file except in compliance with the License.
-     You may obtain a copy of the License at
-
-         http://www.apache.org/licenses/LICENSE-2.0
-
-     Unless required by applicable law or agreed to in writing, software
-     distributed under the License is distributed on an "AS IS" BASIS,
-     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-     See the License for the specific language governing permissions and
-     limitations under the License.
-
--->
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <modelVersion>4.0.0</modelVersion>
-  
   <groupId>dev.morling.demos</groupId>
   <artifactId>average</artifactId>
-  <version>1.0.0-SNAPSHOT</version>
-  
-  <properties>
-    <maven.compiler.parameters>true</maven.compiler.parameters>
-    <maven.compiler.release>21</maven.compiler.release>
-    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-  </properties>
-
   <name>My OSS Project</name>
+  <version>1.0.0-SNAPSHOT</version>
   <description>My Latest OSS Project</description>
-  <inceptionYear>2021</inceptionYear>
   <url>tbd.</url>
-
+  <inceptionYear>2021</inceptionYear>
   <licenses>
     <license>
       <name>Apache-2.0</name>
@@ -42,45 +15,7 @@
       <distribution>repo</distribution>
     </license>
   </licenses>
-
-  <dependencyManagement>
-    <dependencies>
-      <dependency>
-        <groupId>org.junit</groupId>
-        <artifactId>junit-bom</artifactId>
-        <version>5.8.1</version>
-        <type>pom</type>
-        <scope>import</scope>
-      </dependency>
-    </dependencies>
-  </dependencyManagement>
-
-  <dependencies>
-    <dependency>
-      <groupId>org.apache.spark</groupId>
-      <artifactId>spark-core_2.13</artifactId>
-      <version>3.5.0</version>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.spark</groupId>
-      <artifactId>spark-sql_2.13</artifactId>
-      <version>3.5.0</version>
-    </dependency>
-    <dependency>
-      <groupId>org.junit.jupiter</groupId>
-      <artifactId>junit-jupiter</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.assertj</groupId>
-      <artifactId>assertj-core</artifactId>
-      <version>3.21.0</version>
-      <scope>test</scope>
-    </dependency>
-  </dependencies>
-
   <build>
-    <!-- Keep alphabetic order -->
     <pluginManagement>
       <plugins>
         <plugin>
@@ -111,17 +46,11 @@
           </configuration>
         </plugin>
         <plugin>
-          <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-compiler-plugin</artifactId>
           <version>3.12.1</version>
           <configuration>
             <parameters>true</parameters>
             <compilerArgs>
-              <!--
-                IntelliJ does not yet support the enablePreview configuration option.
-                Therefore, we use a compiler argument.
-                See https://youtrack.jetbrains.com/issue/IDEA-296303
-              -->
               <compilerArg>--enable-preview</compilerArg>
               <compilerArg>--add-modules</compilerArg>
               <compilerArg>java.base,jdk.incubator.vector</compilerArg>
@@ -131,53 +60,43 @@
           </configuration>
         </plugin>
         <plugin>
-          <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-clean-plugin</artifactId>
           <version>3.1.0</version>
         </plugin>
         <plugin>
-          <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-deploy-plugin</artifactId>
           <version>3.1.1</version>
         </plugin>
         <plugin>
-          <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-enforcer-plugin</artifactId>
           <version>3.3.0</version>
         </plugin>
         <plugin>
-          <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-install-plugin</artifactId>
           <version>3.1.1</version>
         </plugin>
         <plugin>
-          <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-jar-plugin</artifactId>
           <version>3.2.0</version>
         </plugin>
         <plugin>
-          <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-resources-plugin</artifactId>
           <version>3.2.0</version>
         </plugin>
         <plugin>
-          <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-site-plugin</artifactId>
           <version>3.12.1</version>
         </plugin>
         <plugin>
-          <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-surefire-plugin</artifactId>
           <version>3.2.3</version>
         </plugin>
         <plugin>
-          <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-wrapper-plugin</artifactId>
           <version>3.2.0</version>
         </plugin>
       </plugins>
     </pluginManagement>
-
   </build>
   <profiles>
     <profile>
@@ -190,10 +109,10 @@
             <executions>
               <execution>
                 <id>validate-format</id>
+                <phase>validate</phase>
                 <goals>
                   <goal>validate</goal>
                 </goals>
-                <phase>validate</phase>
               </execution>
             </executions>
           </plugin>
@@ -202,16 +121,34 @@
     </profile>
     <profile>
       <id>qa</id>
-      <activation>
-        <property>
-          <name>!quick</name>
-        </property>
-      </activation>
       <build>
         <plugins>
           <plugin>
             <groupId>com.mycila</groupId>
             <artifactId>license-maven-plugin</artifactId>
+            <version>4.1</version>
+            <executions>
+              <execution>
+                <goals>
+                  <goal>check</goal>
+                </goals>
+                <configuration>
+                  <header>etc/license.txt</header>
+                  <strictCheck>true</strictCheck>
+                  <aggregate>true</aggregate>
+                  <excludes>
+                    <exclude>LICENSE.txt</exclude>
+                    <exclude>**/.dontdelete</exclude>
+                    <exclude>**/measurements*.txt</exclude>
+                    <exclude>**/measurements*.out</exclude>
+                    <exclude>out_expected.txt</exclude>
+                    <exclude>github_users.txt</exclude>
+                    <exclude>src/main/java/dev/morling/onebrc/CalculateAverage_cliffclick.java</exclude>
+                    <exclude>.sdkmanrc</exclude>
+                  </excludes>
+                </configuration>
+              </execution>
+            </executions>
             <configuration>
               <header>etc/license.txt</header>
               <strictCheck>true</strictCheck>
@@ -223,48 +160,42 @@
                 <exclude>**/measurements*.out</exclude>
                 <exclude>out_expected.txt</exclude>
                 <exclude>github_users.txt</exclude>
-                <!-- Cliff asked to be named as the copyright holder for his entry; -->
                 <exclude>src/main/java/dev/morling/onebrc/CalculateAverage_cliffclick.java</exclude>
                 <exclude>.sdkmanrc</exclude>
               </excludes>
             </configuration>
-            <executions>
-              <execution>
-                <goals>
-                  <goal>check</goal>
-                </goals>
-              </execution>
-            </executions>
           </plugin>
           <plugin>
             <groupId>net.revelc.code.formatter</groupId>
             <artifactId>formatter-maven-plugin</artifactId>
+            <version>2.16.0</version>
             <executions>
               <execution>
                 <id>format</id>
+                <phase>process-sources</phase>
                 <goals>
                   <goal>format</goal>
                 </goals>
-                <phase>process-sources</phase>
+                <configuration>
+                  <configFile>etc/eclipse-formatter-config.xml</configFile>
+                  <directories>
+                    <directory>/home/jon/Documents/projects/1brc/src/main/java</directory>
+                    <directory>/home/jon/Documents/projects/1brc/src/main/java-22</directory>
+                  </directories>
+                </configuration>
               </execution>
             </executions>
+            <configuration>
+              <configFile>etc/eclipse-formatter-config.xml</configFile>
+              <directories>
+                <directory>/home/jon/Documents/projects/1brc/src/main/java</directory>
+                <directory>/home/jon/Documents/projects/1brc/src/main/java-22</directory>
+              </directories>
+            </configuration>
           </plugin>
-<!--          <plugin>-->
-<!--            <groupId>net.revelc.code</groupId>-->
-<!--            <artifactId>impsort-maven-plugin</artifactId>-->
-<!--            <executions>-->
-<!--              <execution>-->
-<!--                <id>sort-imports</id>-->
-<!--                <goals>-->
-<!--                  <goal>sort</goal>-->
-<!--                </goals>-->
-<!--                <phase>process-sources</phase>-->
-<!--              </execution>-->
-<!--            </executions>-->
-<!--          </plugin>-->
           <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-enforcer-plugin</artifactId>
+            <version>3.3.0</version>
             <executions>
               <execution>
                 <id>enforce-plugin-versions</id>
@@ -274,13 +205,13 @@
                 <configuration>
                   <rules>
                     <requireJavaVersion>
-                      <version>${maven.compiler.release}</version>
+                      <version>21</version>
                     </requireJavaVersion>
                     <requirePluginVersions>
-                       <banLatest>true</banLatest>
-                       <banRelease>true</banRelease>
-                       <banSnapshots>true</banSnapshots>
-                       <phases>clean,deploy,site</phases>
+                      <banLatest>true</banLatest>
+                      <banRelease>true</banRelease>
+                      <banSnapshots>true</banSnapshots>
+                      <phases>clean,deploy,site</phases>
                     </requirePluginVersions>
                   </rules>
                 </configuration>
@@ -288,7 +219,6 @@
             </executions>
           </plugin>
           <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-shade-plugin</artifactId>
             <version>3.5.1</version>
             <executions>
@@ -299,8 +229,7 @@
                 </goals>
                 <configuration>
                   <artifactSet>
-                    <excludes>
-                    </excludes>
+                    <excludes />
                   </artifactSet>
                 </configuration>
               </execution>
@@ -311,22 +240,12 @@
     </profile>
     <profile>
       <id>quick</id>
-      <activation>
-        <property>
-          <name>quick</name>
-        </property>
-      </activation>
       <properties>
         <skipTests>true</skipTests>
       </properties>
     </profile>
     <profile>
       <id>jdk22</id>
-      <activation>
-        <jdk>22</jdk>
-      </activation>
-      <properties>
-      </properties>
       <build>
         <pluginManagement>
           <plugins>
@@ -336,11 +255,6 @@
                 <release>22</release>
                 <compileSourceRoots>
                   <compileSourceRoot>${project.basedir}/src/main/java-22</compileSourceRoot>
-                  <!--
-                    Uncomment the next line to build the entire project with jdk22.
-                    Currently, some classes fail to compile under jdk22.
-                  -->
-                  <!-- <compileSourceRoot>${project.build.sourceDirectory}</compileSourceRoot> -->
                 </compileSourceRoots>
               </configuration>
             </plugin>
@@ -349,4 +263,49 @@
       </build>
     </profile>
   </profiles>
+  <dependencies>
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter</artifactId>
+      <version>5.8.1</version>
+      <scope>test</scope>
+      <exclusions>
+        <exclusion>
+          <artifactId>junit-jupiter-api</artifactId>
+          <groupId>org.junit.jupiter</groupId>
+        </exclusion>
+        <exclusion>
+          <artifactId>junit-jupiter-params</artifactId>
+          <groupId>org.junit.jupiter</groupId>
+        </exclusion>
+        <exclusion>
+          <artifactId>junit-jupiter-engine</artifactId>
+          <groupId>org.junit.jupiter</groupId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>org.assertj</groupId>
+      <artifactId>assertj-core</artifactId>
+      <version>3.21.0</version>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+        <groupId>org.junit</groupId>
+        <artifactId>junit-bom</artifactId>
+        <version>5.8.1</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
+  <properties>
+    <maven.compiler.release>21</maven.compiler.release>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <maven.compiler.parameters>true</maven.compiler.parameters>
+    <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+  </properties>
 </project>
