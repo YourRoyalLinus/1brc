@@ -59,12 +59,12 @@
     <dependency>
       <groupId>org.apache.spark</groupId>
       <artifactId>spark-core_2.13</artifactId>
-      <version>3.5.0</version>
+      <version>3.3.4</version>
     </dependency>
     <dependency>
       <groupId>org.apache.spark</groupId>
       <artifactId>spark-sql_2.13</artifactId>
-      <version>3.5.0</version>
+      <version>3.3.4</version>
     </dependency>
     <dependency>
       <groupId>org.junit.jupiter</groupId>
@@ -96,6 +96,7 @@
             <configFile>etc/eclipse-formatter-config.xml</configFile>
             <directories>
               <directory>${project.build.sourceDirectory}</directory>
+              <directory>${project.basedir}/src/main/java-11</directory>
               <directory>${project.basedir}/src/main/java-22</directory>
             </directories>
           </configuration>
@@ -287,25 +288,6 @@
               </execution>
             </executions>
           </plugin>
-          <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-shade-plugin</artifactId>
-            <version>3.5.1</version>
-            <executions>
-              <execution>
-                <phase>package</phase>
-                <goals>
-                  <goal>shade</goal>
-                </goals>
-                <configuration>
-                  <artifactSet>
-                    <excludes>
-                    </excludes>
-                  </artifactSet>
-                </configuration>
-              </execution>
-            </executions>
-          </plugin>
         </plugins>
       </build>
     </profile>
@@ -346,6 +328,68 @@
             </plugin>
           </plugins>
         </pluginManagement>
+      </build>
+    </profile>
+    <profile>
+      <id>jdk11</id>
+      <activation>
+        <jdk>11</jdk>
+      </activation>
+      <properties>
+          <maven.compiler.release>11</maven.compiler.release>
+      </properties>
+      <build>
+        <pluginManagement>
+          <plugins>
+            <plugin>
+              <artifactId>maven-compiler-plugin</artifactId>
+              <configuration>
+                <release>11</release>
+                <compileSourceRoots>
+                  <compileSourceRoot>${project.basedir}/src/main/java-11</compileSourceRoot>
+                </compileSourceRoots>
+                  <parameters>true</parameters>
+                  <compilerArgs>
+                    <compilerArg>--add-modules</compilerArg>
+                    <compilerArg>java.base</compilerArg>->
+                    <compilerArg>--add-opens=java.base/java.lang=ALL-UNNAMED</compilerArg>
+                    <compilerArg>--add-opens=java.base/jdk.internal.util=ALL-UNNAMED</compilerArg>
+                  </compilerArgs>
+              </configuration>
+            </plugin>
+            </plugins>
+        </pluginManagement>
+        <plugins>
+            <plugin>
+              <groupId>org.apache.maven.plugins</groupId>
+              <artifactId>maven-shade-plugin</artifactId>
+              <version>3.5.1</version>
+              <executions>
+                <execution>
+                  <phase>package</phase>
+                  <goals>
+                    <goal>shade</goal>
+                  </goals>
+                  <configuration>
+                    <artifactSet>
+                      <excludes>
+                      </excludes>
+                    </artifactSet>
+                    <filters>
+                      <filter>
+                        <artifact>*:*</artifact>
+                        <excludes>
+                          <exclude>META-INF/*.SF</exclude>
+                          <exclude>META-INF/*.DSA</exclude>
+                          <exclude>META-INF/*.RSA</exclude>
+                        </excludes>
+                      </filter>
+                    </filters>
+                  </configuration>
+                </execution>
+              </executions>
+            </plugin>
+          </plugins>
       </build>
     </profile>
   </profiles>

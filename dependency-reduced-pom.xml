@@ -31,6 +31,7 @@
             <configFile>etc/eclipse-formatter-config.xml</configFile>
             <directories>
               <directory>${project.build.sourceDirectory}</directory>
+              <directory>${project.basedir}/src/main/java-11</directory>
               <directory>${project.basedir}/src/main/java-22</directory>
             </directories>
           </configuration>
@@ -180,6 +181,7 @@
                   <configFile>etc/eclipse-formatter-config.xml</configFile>
                   <directories>
                     <directory>/home/jon/Documents/projects/1brc/src/main/java</directory>
+                    <directory>/home/jon/Documents/projects/1brc/src/main/java-11</directory>
                     <directory>/home/jon/Documents/projects/1brc/src/main/java-22</directory>
                   </directories>
                 </configuration>
@@ -189,6 +191,7 @@
               <configFile>etc/eclipse-formatter-config.xml</configFile>
               <directories>
                 <directory>/home/jon/Documents/projects/1brc/src/main/java</directory>
+                <directory>/home/jon/Documents/projects/1brc/src/main/java-11</directory>
                 <directory>/home/jon/Documents/projects/1brc/src/main/java-22</directory>
               </directories>
             </configuration>
@@ -205,7 +208,7 @@
                 <configuration>
                   <rules>
                     <requireJavaVersion>
-                      <version>21</version>
+                      <version>11</version>
                     </requireJavaVersion>
                     <requirePluginVersions>
                       <banLatest>true</banLatest>
@@ -214,23 +217,6 @@
                       <phases>clean,deploy,site</phases>
                     </requirePluginVersions>
                   </rules>
-                </configuration>
-              </execution>
-            </executions>
-          </plugin>
-          <plugin>
-            <artifactId>maven-shade-plugin</artifactId>
-            <version>3.5.1</version>
-            <executions>
-              <execution>
-                <phase>package</phase>
-                <goals>
-                  <goal>shade</goal>
-                </goals>
-                <configuration>
-                  <artifactSet>
-                    <excludes />
-                  </artifactSet>
                 </configuration>
               </execution>
             </executions>
@@ -261,6 +247,63 @@
           </plugins>
         </pluginManagement>
       </build>
+    </profile>
+    <profile>
+      <id>jdk11</id>
+      <build>
+        <pluginManagement>
+          <plugins>
+            <plugin>
+              <artifactId>maven-compiler-plugin</artifactId>
+              <configuration>
+                <release>11</release>
+                <compileSourceRoots>
+                  <compileSourceRoot>${project.basedir}/src/main/java-11</compileSourceRoot>
+                </compileSourceRoots>
+                <parameters>true</parameters>
+                <compilerArgs>
+                  <compilerArg>--add-modules</compilerArg>
+                  <compilerArg>java.base</compilerArg>
+                  <compilerArg>--add-opens=java.base/java.lang=ALL-UNNAMED</compilerArg>
+                  <compilerArg>--add-opens=java.base/jdk.internal.util=ALL-UNNAMED</compilerArg>
+                </compilerArgs>
+              </configuration>
+            </plugin>
+          </plugins>
+        </pluginManagement>
+        <plugins>
+          <plugin>
+            <artifactId>maven-shade-plugin</artifactId>
+            <version>3.5.1</version>
+            <executions>
+              <execution>
+                <phase>package</phase>
+                <goals>
+                  <goal>shade</goal>
+                </goals>
+                <configuration>
+                  <artifactSet>
+                    <excludes />
+                  </artifactSet>
+                  <filters>
+                    <filter>
+                      <artifact>*:*</artifact>
+                      <excludes>
+                        <exclude>META-INF/*.SF</exclude>
+                        <exclude>META-INF/*.DSA</exclude>
+                        <exclude>META-INF/*.RSA</exclude>
+                      </excludes>
+                    </filter>
+                  </filters>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+      <properties>
+        <maven.compiler.release>11</maven.compiler.release>
+      </properties>
     </profile>
   </profiles>
   <dependencies>

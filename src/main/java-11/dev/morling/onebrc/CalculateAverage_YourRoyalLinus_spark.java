@@ -22,15 +22,14 @@ import org.apache.spark.sql.types.StructType;
 import static org.apache.spark.sql.functions.*;
 
 public class CalculateAverage_YourRoyalLinus_spark {
-    private static final String FILE = "./measurements.txt";
+    private static final String FILE = "./1brc/measurements.txt";
 
     public static void main(String[] args) throws IOException {
-        System.out.println("TEST1");
         SparkSession spark = SparkSession
                 .builder()
                 .appName("1brc")
+                .master("local[*]")
                 .getOrCreate();
-        System.out.println("TEST2");
         StructType schema = new StructType()
                 .add("station", "string")
                 .add("measurement", "double");
@@ -43,16 +42,18 @@ public class CalculateAverage_YourRoyalLinus_spark {
         Dataset<Row> maxMeasurements = groupedMeasurements.max("measurement");
 
         Dataset<Row> result = averagedMeasurements.join(
-                minMeasurements, "station", "left").join(
-                        maxMeasurements, "station", "left")
+                minMeasurements,
+                "station").join(
+                        maxMeasurements,
+                        "station")
                 .orderBy(
                         "station")
                 .select(
                         concat(
                                 col("station"), lit("="),
-                                round(col("min(measurement"), 1), lit("/"),
-                                round(col("avg(measurement"), 1), lit("/"),
-                                round(col("max(measurement"), 1)).alias("output"));
+                                round(col("min(measurement)"), 1), lit("/"),
+                                round(col("avg(measurement)"), 1), lit("/"),
+                                round(col("max(measurement)"), 1)).alias("output"));
 
         StringBuilder output = new StringBuilder("{");
         result.collectAsList().parallelStream().forEach(
