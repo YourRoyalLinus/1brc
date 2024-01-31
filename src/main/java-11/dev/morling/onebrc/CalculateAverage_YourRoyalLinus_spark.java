@@ -26,6 +26,7 @@ public class CalculateAverage_YourRoyalLinus_spark {
     private static final String FILE = "./measurements.txt";
 
     public static void main(String[] args) throws IOException {
+        long start = System.currentTimeMillis();
         SparkSession spark = SparkSession
                 .builder()
                 .appName("1brc")
@@ -65,5 +66,6 @@ public class CalculateAverage_YourRoyalLinus_spark {
         output.append("}");
 
         System.out.println(output);
+        System.out.println("Job completed in: " + (System.currentTimeMillis() - start) + "ms");
     }
 }
