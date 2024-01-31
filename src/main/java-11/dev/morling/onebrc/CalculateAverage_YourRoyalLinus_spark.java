@@ -16,6 +16,7 @@
 package dev.morling.onebrc;
 
 import java.io.IOException;
+import java.util.List;
 
 import org.apache.spark.sql.*;
 import org.apache.spark.sql.types.StructType;
@@ -30,11 +31,13 @@ public class CalculateAverage_YourRoyalLinus_spark {
                 .appName("1brc")
                 .master("local[*]")
                 .getOrCreate();
-        StructType schema = new StructType()
-                .add("station", "string")
-                .add("measurement", "double");
 
-        Dataset<Row> measurementsDF = spark.read().schema(schema).csv(FILE);
+        Dataset<Row> input = spark.read().text(FILE);
+
+        Dataset<Row> measurementsDF = input.select(
+                split(col("value"), ";").getItem(0).alias("station"),
+                split(col("value"), ";").getItem(1).cast("Double").alias("measurement"));
+
         RelationalGroupedDataset groupedMeasurements = measurementsDF.groupBy("station");
 
         Dataset<Row> averagedMeasurements = groupedMeasurements.avg("measurement");
@@ -42,13 +45,9 @@ public class CalculateAverage_YourRoyalLinus_spark {
         Dataset<Row> maxMeasurements = groupedMeasurements.max("measurement");
 
         Dataset<Row> result = averagedMeasurements.join(
-                minMeasurements,
-                "station").join(
-                        maxMeasurements,
-                        "station")
-                .orderBy(
-                        "station")
-                .select(
+                minMeasurements, "station").join(
+                        maxMeasurements, "station")
+                .orderBy("station").select(
                         concat(
                                 col("station"), lit("="),
                                 round(col("min(measurement)"), 1), lit("/"),
@@ -56,13 +55,15 @@ public class CalculateAverage_YourRoyalLinus_spark {
                                 round(col("max(measurement)"), 1)).alias("output"));
 
         StringBuilder output = new StringBuilder("{");
-        result.collectAsList().parallelStream().forEach(
-                (r) -> {
-                    output.append(r.getString(0));
-                    output.append(", ");
-                });
-        output.delete(output.length() - 2, output.length());
+
+        List<Row> results = result.collectAsList();
+        for (int i = 0; i < results.size() - 1; i++) {
+            output.append(results.get(i).getString(0) + ", ");
+        }
+
+        output.append(results.get(results.size() - 1).getString(0));
         output.append("}");
+
         System.out.println(output);
     }
 }
