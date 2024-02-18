@@ -17,16 +17,21 @@ package dev.morling.onebrc;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Scanner;
-import java.util.*;
-import java.util.concurrent.Executors;
-import java.util.stream.Collector;
-
-import static java.util.stream.Collectors.groupingBy;
+import java.io.RandomAccessFile;
+import java.nio.channels.FileChannel;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.MappedByteBuffer;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.StandardOpenOption;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.TreeMap;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class CalculateAverage_YourRoyalLinus {
-
-    private static final String FILE = "./measurements2.txt";
+    private static final String FILE = "./measurements.txt";
+    private static final ConcurrentHashMap<String, ResultRecord> concurrentMap = new ConcurrentHashMap<>();
 
     private static final int BUFFER_SIZE = 10000;
 
@@ -113,53 +118,131 @@ public class CalculateAverage_YourRoyalLinus {
     }
 
     public static void main(String[] args) throws IOException {
-        try (var scanner = new Scanner(new File(FILE))) {
-            int numThreads = Runtime.getRuntime().availableProcessors();
-            List<Aggregator> aggregators = new ArrayList<>();
-            try (var execService = Executors.newFixedThreadPool(numThreads)) {
-                while (scanner.hasNextLine()) {
-                    String[] buf = getNextBatch(scanner);
-                    Aggregator a = new Aggregator(buf);
-                    aggregators.add(a);
-                    execService.execute(a);
+        File file = new File(FILE);
+        long start = System.currentTimeMillis();
+
+        getFilePartitions(file).stream().parallel().forEach(partition -> {
+            long partitionEnd = partition.end();
+            try (FileChannel fileChannel = (FileChannel) Files.newByteChannel(Path.of(FILE), StandardOpenOption.READ)) {
+                MappedByteBuffer byteBuf = fileChannel.map(FileChannel.MapMode.READ_ONLY, partition.start(), partitionEnd - partition.start());
+                long limit = byteBuf.limit();
+                int startLine = 0;
+                byte currentByte = 0;
+
+                while ((startLine = byteBuf.position()) < limit) {
+                    int currentPos = startLine;
+                    int byteIndex = 0;
+                    byte[] stationBytes = new byte[64];
+
+                    while (currentPos < partitionEnd && (currentByte = byteBuf.get(currentPos++)) != ';') {
+                        stationBytes[byteIndex++] = currentByte;
+                    }
+
+                    double temp = 0;
+                    int negative = 1;
+                    core: while (currentPos < partitionEnd && (currentByte = byteBuf.get(currentPos++)) != '\n') {
+                        switch (currentByte) {
+                            case '-':
+                                negative = -1;
+                            case '.':
+                                break;
+                            case '\r':
+                                currentPos++;
+                                break core;
+                            default:
+                                temp = 10 * temp + (currentByte - '0');
+                        }
+                    }
+
+                    temp *= negative;
+                    double finalTemp = temp / 10.0;
+
+                    String stationStr = new String(stationBytes, StandardCharsets.UTF_8).trim();
+
+                    ResultRecord current = new ResultRecord(finalTemp);
+                    ResultRecord existing = concurrentMap.getOrDefault(stationStr, null);
+                    if (existing != null) {
+                        current = mergeResultRecords(existing, current);
+                    }
+                    concurrentMap.put(stationStr, current);
+
+                    byteBuf.position(currentPos);
                 }
+            }
+            catch (IOException ex) {
+                throw new RuntimeException(ex);
+            }
+        });
 
-                Map<String, MeasurementAggregator> measurements = aggregators
-                        .stream()
-                        .map(Aggregator::getResult)
-                        .reduce(new HashMap<>(), (a, b) -> {
-                            a.keySet().forEach((k) -> {
-                                MeasurementAggregator _child = a.get(k);
-                                MeasurementAggregator _parent = b.getOrDefault(k, null);
-                                if (_parent == null) {
-                                    b.put(k, _child);
-                                }
-                                else {
-                                    MeasurementAggregator _aggr = new MeasurementAggregator();
-                                    _aggr.min = Math.min(_parent.min, _child.min);
-                                    _aggr.max = Math.max(_parent.max, _child.max);
-                                    _aggr.sum = _parent.sum + _child.sum;
-                                    _aggr.count = _parent.count + _child.count;
+        System.out.println(new TreeMap<>(concurrentMap));
+        System.out.println("Exec time=" + (System.currentTimeMillis() - start));
+    }
 
-                                    b.put(k, _aggr);
-                                }
-                            });
-                            return b;
-                        });
-                SortedMap<String, ResultRow> output = new TreeMap<>();
-                measurements.forEach((k, v) -> {
-                    ResultRow r = new ResultRow(v.min, (Math.round(v.sum * 10.0) / 10.0) / v.count, v.max);
-                    output.put(k, r);
-                });
+    private static ResultRecord mergeResultRecords(ResultRecord v, ResultRecord value) {
+        return mergeResultRecords(v, value.min, value.max, value.sum, value.count);
+    }
 
-                System.out.println(output);
+    private static ResultRecord mergeResultRecords(ResultRecord r, double min, double max, double sum, long count) {
+        r.min = Math.min(r.min, min);
+        r.max = Math.max(r.max, max);
+        r.sum += sum;
+        r.count += count;
+        return r;
+    }
+
+    private static List<FilePartition> getFilePartitions(File file) throws IOException {
+        int partitionCount = Runtime.getRuntime().availableProcessors();
+        long fileSize = file.length();
+        long partitionSize = fileSize / partitionCount;
+
+        List<FilePartition> partitions = new ArrayList<>();
+        try (RandomAccessFile raFile = new RandomAccessFile(file, "r")) {
+            for (int i = 0; i < partitionCount; i++) {
+                long start = i * partitionSize;
+                long end = (i == partitionCount - 1) ? fileSize : start + partitionSize;
+                start = findPartitionBoundry(raFile, (i == 0), start, end);
+                end = findPartitionBoundry(raFile, (i == partitionCount - 1), end, fileSize);
+
+                partitions.add(new FilePartition(start, end));
             }
         }
-        catch (Exception ex) {
-            System.out.println("Exception:\n" + ex);
-            System.exit(1);
+
+        return partitions;
+    }
+
+    private static long findPartitionBoundry(RandomAccessFile file, boolean skipSegment, long start, long fileEnd) throws IOException {
+        if (!skipSegment) {
+            file.seek(start);
+            while (start < fileEnd) {
+                start++;
+                if (file.read() == '\n')
+                    break;
+            }
         }
+        return start;
     }
 }
 
-// new MeasurementAggregator(agg.min, (Math.round(agg.sum * 10.0) / 10.0) / agg.count, agg.max)
+class ResultRecord {
+    double min;
+    double max;
+    double sum;
+    long count;
+
+    ResultRecord(double value) {
+        min = max = sum = value;
+        this.count = 1;
+    };
+
+    public String toString() {
+        return round(min) + "/" + round(sum / count) + "/" + round(max);
+    }
+
+    private double round(double value) {
+        return Math.round(value * 10.0) / 10.0;
+    }
+
+}
+
+record FilePartition(long start, long end) {
+}
