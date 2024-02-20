@@ -22,8 +22,8 @@ import java.nio.channels.FileChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.MappedByteBuffer;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.StandardOpenOption;
+import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.TreeMap;
@@ -36,13 +36,13 @@ public class CalculateAverage_YourRoyalLinus {
      * * My results on this computer:
      *
      * CalculateAverage_spullara: 0m2.013s
-     * CalculateAverage_YourRoyalLinus: 0m26.692s
+     * CalculateAverage_YourRoyalLinus: 0m18.710s
      * CalculateAverage: 3m22.363s
      *
      */
 
     private static final String FILE = "./measurements.txt";
-    private static final ConcurrentHashMap<String, ResultRecord> concurrentMap = new ConcurrentHashMap<>();
+    private static final ConcurrentHashMap<ByteKey, ResultRecord> concurrentMap = new ConcurrentHashMap<>();
 
     public static void main(String[] args) throws IOException {
         File file = new File(FILE);
@@ -59,13 +59,13 @@ public class CalculateAverage_YourRoyalLinus {
                 while ((startLine = byteBuf.position()) < limit) {
                     int currentPos = startLine;
                     int byteIndex = 0;
-                    byte[] stationBytes = new byte[64];
+                    byte[] stationBytes = new byte[32];
 
                     while (currentPos < partitionEnd && (currentByte = byteBuf.get(currentPos++)) != ';') {
                         stationBytes[byteIndex++] = currentByte;
                     }
 
-                    double temp = 0;
+                    int temp = 0;
                     int negative = 1;
                     core: while (currentPos < partitionEnd && (currentByte = byteBuf.get(currentPos++)) != '\n') {
                         switch (currentByte) {
@@ -82,16 +82,14 @@ public class CalculateAverage_YourRoyalLinus {
                     }
 
                     temp *= negative;
-                    double finalTemp = temp / 10.0;
+                    ByteKey station = new ByteKey(stationBytes);
 
-                    String stationStr = new String(stationBytes, StandardCharsets.UTF_8).trim();
-
-                    ResultRecord current = new ResultRecord(finalTemp);
-                    ResultRecord existing = concurrentMap.getOrDefault(stationStr, null);
+                    ResultRecord current = new ResultRecord(temp / 10.0);
+                    ResultRecord existing = concurrentMap.getOrDefault(station, null);
                     if (existing != null) {
                         current = mergeResultRecords(existing, current);
                     }
-                    concurrentMap.put(stationStr, current);
+                    concurrentMap.put(station, current);
 
                     byteBuf.position(currentPos);
                 }
@@ -167,6 +165,41 @@ class ResultRecord {
 
     private double round(double value) {
         return Math.round(value * 10.0) / 10.0;
+    }
+
+}
+
+class ByteKey implements Comparable<ByteKey> {
+    String val;
+    byte[] data;
+
+    ByteKey(byte[] key) {
+        data = key;
+    }
+
+    @Override
+    public int compareTo(ByteKey other) {
+        return this.toString().compareTo(other.toString());
+    }
+
+    @Override
+    public boolean equals(Object other) {
+        if (!(other instanceof ByteKey))
+            return false;
+
+        return Arrays.equals(data, ((ByteKey) other).data);
+    }
+
+    @Override
+    public int hashCode() {
+        return Arrays.hashCode(data);
+    }
+
+    @Override
+    public String toString() {
+        if (val == null)
+            val = new String(data).trim();
+        return val;
     }
 
 }
