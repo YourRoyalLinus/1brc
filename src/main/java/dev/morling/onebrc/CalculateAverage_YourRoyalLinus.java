@@ -26,80 +26,87 @@ import java.nio.file.StandardOpenOption;
 import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.HashMap;
 import java.util.TreeMap;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 public class CalculateAverage_YourRoyalLinus {
     /*
      * This solution was heavily inspired by CalculateAverage_spullara
      *
-     * * My results on this computer:
+     * My results on this computer:
      *
      * CalculateAverage_spullara: 0m2.013s
-     * CalculateAverage_YourRoyalLinus: 0m18.710s
+     * CalculateAverage_YourRoyalLinus: 0m14.188s
      * CalculateAverage: 3m22.363s
      *
      */
 
     private static final String FILE = "./measurements.txt";
-    private static final ConcurrentHashMap<ByteKey, ResultRecord> concurrentMap = new ConcurrentHashMap<>();
 
     public static void main(String[] args) throws IOException {
         File file = new File(FILE);
         long start = System.currentTimeMillis();
 
-        getFilePartitions(file).parallelStream().forEach(partition -> {
-            long partitionEnd = partition.end();
-            try (FileChannel fileChannel = (FileChannel) Files.newByteChannel(Path.of(FILE), StandardOpenOption.READ)) {
-                MappedByteBuffer byteBuf = fileChannel.map(FileChannel.MapMode.READ_ONLY, partition.start(), partitionEnd - partition.start());
-                long limit = byteBuf.limit();
-                int startLine = 0;
-                byte currentByte = 0;
+        TreeMap<ByteKey, ResultRecord> measurements = getFilePartitions(file)
+            .parallelStream()
+            .map(partition -> {
+                HashMap<ByteKey, ResultRecord> result = new HashMap<ByteKey, ResultRecord>();
+                long partitionEnd = partition.end();
+                try (FileChannel fileChannel = (FileChannel) Files.newByteChannel(Path.of(FILE), StandardOpenOption.READ)) {
+                    MappedByteBuffer byteBuf = fileChannel.map(FileChannel.MapMode.READ_ONLY, partition.start(), partitionEnd - partition.start());
+                    long limit = byteBuf.limit();
+                    int startLine = 0;
+                    byte currentByte = 0;
 
-                while ((startLine = byteBuf.position()) < limit) {
-                    int currentPos = startLine;
-                    int byteIndex = 0;
-                    byte[] stationBytes = new byte[32];
+                    while ((startLine = byteBuf.position()) < limit) {
+                        int currentPos = startLine;
+                        int byteIndex = 0;
+                        byte[] stationBytes = new byte[32];
 
-                    while (currentPos < partitionEnd && (currentByte = byteBuf.get(currentPos++)) != ';') {
-                        stationBytes[byteIndex++] = currentByte;
-                    }
-
-                    int temp = 0;
-                    int negative = 1;
-                    core: while (currentPos < partitionEnd && (currentByte = byteBuf.get(currentPos++)) != '\n') {
-                        switch (currentByte) {
-                            case '-':
-                                negative = -1;
-                            case '.':
-                                break;
-                            case '\r':
-                                currentPos++;
-                                break core;
-                            default:
-                                temp = 10 * temp + (currentByte - '0');
+                        while (currentPos < partitionEnd && (currentByte = byteBuf.get(currentPos++)) != ';') {
+                            stationBytes[byteIndex++] = currentByte;
                         }
+
+                        int temp = 0;
+                        int negative = 1;
+                        core: while (currentPos < partitionEnd && (currentByte = byteBuf.get(currentPos++)) != '\n') {
+                            switch (currentByte) {
+                                case '-':
+                                    negative = -1;
+                                case '.':
+                                    break;
+                                case '\r':
+                                    currentPos++;
+                                    break core;
+                                default:
+                                    temp = 10 * temp + (currentByte - '0');
+                            }
+                        }
+
+                        temp *= negative;
+                        ByteKey stationStr = new ByteKey(stationBytes);
+
+                        ResultRecord current = new ResultRecord(temp / 10.0);
+                        ResultRecord existing = result.getOrDefault(stationStr, null);
+                        if (existing != null) {
+                            current = mergeResultRecords(existing, current);
+                        }
+                        result.put(stationStr, current);
+
+                        byteBuf.position(currentPos);
                     }
 
-                    temp *= negative;
-                    ByteKey station = new ByteKey(stationBytes);
-
-                    ResultRecord current = new ResultRecord(temp / 10.0);
-                    ResultRecord existing = concurrentMap.getOrDefault(station, null);
-                    if (existing != null) {
-                        current = mergeResultRecords(existing, current);
-                    }
-                    concurrentMap.put(station, current);
-
-                    byteBuf.position(currentPos);
+                    return result;
                 }
-            }
-            catch (IOException ex) {
-                throw new RuntimeException(ex);
-            }
-        });
+                catch (IOException ex) {
+                    throw new RuntimeException(ex);
+                }
+        })
+        .flatMap(m -> m.entrySet().stream())
+        .collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue(), CalculateAverage_YourRoyalLinus::mergeResultRecords, TreeMap::new));
 
-        System.out.println(new TreeMap<>(concurrentMap));
+        System.out.println(measurements);
         System.out.println("Exec time=" + (System.currentTimeMillis() - start));
     }
 
