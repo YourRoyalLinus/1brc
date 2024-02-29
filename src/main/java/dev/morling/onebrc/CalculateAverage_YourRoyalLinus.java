@@ -37,7 +37,7 @@ public class CalculateAverage_YourRoyalLinus {
      * My results on this computer:
      *
      * CalculateAverage_spullara: 0m2.013s
-     * CalculateAverage_YourRoyalLinus: 0m14.188s
+     * CalculateAverage_YourRoyalLinus: 0m11.672s
      * CalculateAverage: 3m22.363s
      *
      */
