@@ -14,10 +14,11 @@
 #  limitations under the License.
 #
 
-source "$HOME/.sdkman/bin/sdkman-init.sh"
-sdk use java 21.0.1-graal 1>&2
+FROM golang AS builder
+WORKDIR /app
+COPY . ./
+RUN go build -ldflags "-w -s" -o /1brc-go .
 
-if [ ! -f target/CalculateAverage_PanagiotisDrakatos_image ]; then
-    NATIVE_IMAGE_OPTS="--gc=epsilon -O3 -R:MaxHeapSize=10536m --initialize-at-build-time=dev.morling.onebrc.CalculateAverage_PanagiotisDrakatos"
-    native-image $NATIVE_IMAGE_OPTS -cp target/average-1.0.0-SNAPSHOT.jar -o target/CalculateAverage_PanagiotisDrakatos_image dev.morling.onebrc.CalculateAverage_PanagiotisDrakatos
-fi
+FROM scratch AS runner
+WORKDIR /
+COPY --from=builder /1brc-go /

@@ -1,3 +1,4 @@
+#!/bin/bash
 #
 #  Copyright 2023 The original authors
 #
@@ -14,10 +15,12 @@
 #  limitations under the License.
 #
 
+# Uncomment below to use sdk
 source "$HOME/.sdkman/bin/sdkman-init.sh"
-sdk use java 21.0.1-graal 1>&2
-
-if [ ! -f target/CalculateAverage_PanagiotisDrakatos_image ]; then
-    NATIVE_IMAGE_OPTS="--gc=epsilon -O3 -R:MaxHeapSize=10536m --initialize-at-build-time=dev.morling.onebrc.CalculateAverage_PanagiotisDrakatos"
-    native-image $NATIVE_IMAGE_OPTS -cp target/average-1.0.0-SNAPSHOT.jar -o target/CalculateAverage_PanagiotisDrakatos_image dev.morling.onebrc.CalculateAverage_PanagiotisDrakatos
-fi
+sdk use java 21.0.2-graal 1>&2
+##
+#if [ ! -f target/CalculateAverage_martin2038 ]; then
+#    MAIN=dev.morling.onebrc.CalculateAverage_martin2038
+#    NATIVE_IMAGE_OPTS="-H:+UnlockExperimentalVMOptions --initialize-at-build-time=$MAIN --gc=epsilon -O3 -march=native -R:MaxHeapSize=515m -H:-GenLoopSafepoints -H:InlineAllBonus=10 -H:-ParseRuntimeOptions"
+#    native-image $NATIVE_IMAGE_OPTS -cp target/average-1.0.0-SNAPSHOT.jar -o target/CalculateAverage_martin2038_image $MAIN
+#fi
